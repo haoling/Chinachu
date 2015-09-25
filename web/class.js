@@ -1018,7 +1018,8 @@
 	
 	ui.DownloadRecordedFile = Class.create({
 		initialize: function _init(id) {
-			window.open('./api/recorded/' + id + '/file.m2ts');
+			window.location.hash = '!/program/download/id=' + id + '/';
+			//window.open('./api/recorded/' + id + '/file.m2ts');
 			return this;
 		}
 	});
