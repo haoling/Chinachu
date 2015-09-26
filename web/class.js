@@ -1877,4 +1877,82 @@
 		}
 	});
 	
+	ui.Rename = Class.create({
+		initialize: function _init(id) {
+			this.program = util.getProgramById(id);
+			
+			this.create();
+			
+			return this;
+		},
+		create: function _create() {
+			if (this.program === null) {
+				this.modal = new flagrate.Modal({
+					title: 'エラー',
+					text : '番組が見つかりませんでした'
+				});
+			} else {
+				var form = flagrate.createForm({
+					fields: [
+						{
+							key	: 'title',
+						  label	: 'タイトル',
+							input	: {
+								type	: 'text',
+								style	: { width: '100%' },
+								val	: this.program.title
+							}
+						}
+				  ]
+				});
+				this.modal = new flagrate.Modal({
+					title: 'タイトル編集',
+					subtitle: this.program.title + ' #' + this.program.id,
+					element: form.element,
+					buttons: [
+						{
+							label  : '適用',
+							color  : '@pink',
+							onSelect: function (e, modal) {
+								e.targetButton.disable();
+								var query = form.getResult();
+								
+								var xhr = new XMLHttpRequest();
+
+								xhr.addEventListener('load', function () {
+									if (xhr.status === 201) {
+										flagrate.createModal({
+											title: '成功',
+											text : '変更しました'
+										}).show();
+									} else {
+										flagrate.createModal({
+											title: '失敗',
+											text : '失敗しました (' + xhr.status + ')'
+										}).show();
+									}
+									modal.close();
+								});
+
+								xhr.open('PUT', './api/recorded/' + this.program.id + '/title.json');
+								xhr.setRequestHeader('Content-Type', 'application/json');
+								xhr.send(JSON.stringify(query));
+							}.bind(this)
+						},
+						{
+							label  : 'キャンセル',
+							onSelect: function (e, modal) {
+								modal.close();
+							}
+						}
+					]
+				});
+			}
+			
+			this.modal.show();
+			
+			return this;
+		}
+	});
+	
 })();

@@ -219,6 +219,19 @@ P = Class.create(P, {
 		
 		setTimeout(function() {
 			this.view.title.update(titleHtml);
+			var contextMenuItems = [
+				{
+					label   : 'タイトル編集',
+					icon    : './icons/modify.png',
+					onSelect: function () {
+						new chinachu.ui.Rename(program.id);
+					}
+				}
+			];
+			flagrate.createContextMenu({
+				target: this.view.title,
+				items : contextMenuItems
+			});
 		}.bind(this), 0);
 		
 		if (program._isReserves) {
@@ -345,6 +358,12 @@ P = Class.create(P, {
 				}.bind(this)
 			});
 		}
+		new sakura.ui.Alert({
+			title       : 'info',
+			type        : 'white',
+		  body        : JSON.stringify(program, null , "    "),
+			disableClose: true
+		}).render(this.view.content);
 		
 		if (global.chinachu.status.feature.previewer && program._isRecording) {
 			new Ajax.Request('./api/recording/' + program.id + '/preview.txt', {

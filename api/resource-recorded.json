@@ -27,5 +27,11 @@
     "script" : "recorded-program-watch",
     "methods": ["get"],
     "types"  : ["mp4", "xspf", "m2ts", "webm"]
+  },
+  
+  "/:id/title": {
+    "script" : "recorded-program-title",
+    "methods": ["put"],
+    "types"  : ["json"]
   }
 }
