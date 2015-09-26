@@ -37,6 +37,7 @@ P = Class.create(P, {
 	deinit: function() {
 		
 		if (this.notFoundModal) setTimeout(function() { this.notFoundModal.close(); }.bind(this), 0);
+		if (this.titleContextMenu) this.titleContextMenu.remove();
 		
 		document.stopObserving('chinachu:reserves', this.onNotify);
 		document.stopObserving('chinachu:recording', this.onNotify);
@@ -219,19 +220,21 @@ P = Class.create(P, {
 		
 		setTimeout(function() {
 			this.view.title.update(titleHtml);
-			var contextMenuItems = [
-				{
-					label   : 'タイトル編集',
-					icon    : './icons/modify.png',
-					onSelect: function () {
-						new chinachu.ui.Rename(program.id);
+			if (program._isRecorded) {
+				var contextMenuItems = [
+					{
+						label   : 'タイトル編集',
+						icon    : './icons/modify.png',
+						onSelect: function () {
+							new chinachu.ui.Rename(program.id);
+						}
 					}
-				}
-			];
-			flagrate.createContextMenu({
-				target: this.view.title,
-				items : contextMenuItems
-			});
+				];
+				this.titleContextMenu = flagrate.createContextMenu({
+					target: this.view.title,
+					items : contextMenuItems
+				});
+			}
 		}.bind(this), 0);
 		
 		if (program._isReserves) {
