@@ -126,7 +126,7 @@ function main(avinfo) {
 			tsize = Math.floor(tsize);
 			
 			if (request.query.mode == 'download') {
-				var pi = path.parse(program.recorded);
+				var pi = path.parse(chinachu.formatRecordedName(program, program.recordedFormat || config.recordedFormat));
 				response.setHeader('Content-disposition', 'attachment; filename*=UTF-8\'\'' + encodeURIComponent(pi.name + '.' + request.query.ext));
 			}
 			
