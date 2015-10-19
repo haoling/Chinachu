@@ -446,6 +446,7 @@ chinachu_installer_ffmpeg () {
     --enable-protocol=pipe \
     --enable-protocol=file \
     --enable-filter=crop \
+    --enable-filter=framestep \
     --enable-filter=hqdn3d \
     --enable-filter=pad \
     --enable-filter=resample \
