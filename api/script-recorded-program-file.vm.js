@@ -17,7 +17,8 @@
 				response.setHeader('content-disposition', 'attachment; filename="' + program.id + '.m2ts"');
 				response.head(200);
 
-				fs.createReadStream(program.recorded).pipe(response);
+				var readOpts = {highWaterMark: Math.pow(2,20)};
+				fs.createReadStream(program.recorded, readOpts).pipe(response);
 			}
 			
 			if (request.type === 'json') {
