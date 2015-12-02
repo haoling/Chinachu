@@ -62,7 +62,7 @@ main () {
     reserve | unreserve | skip | unskip | stop | \
     rule | enrule | disrule | rmrule | \
     rules | reserves | recording | recorded | \
-    cleanup | unlock | ircbot | test )
+    cleanup | ircbot | test )
       cmd="chinachu_$cmd"
       ;;
     * )
@@ -259,7 +259,7 @@ chinachu_installer_libvpx () {
   local LIBVPX_GIT="https://chromium.googlesource.com/webm/libvpx"
   
   echo "Installing libvpx from $LIBVPX_GIT"
-  git clone --branch=master $LIBVPX_GIT "$USR_DIR/src/libvpx"
+  git clone --depth=1 --branch=v1.4.0 $LIBVPX_GIT "$USR_DIR/src/libvpx"
   cd "$USR_DIR/src/libvpx"
   
   ./configure \
@@ -312,16 +312,13 @@ chinachu_installer_libfdk-aac () {
 
 chinachu_installer_libogg () {
   remove_dir "$USR_DIR/src/libogg"
+  ensure_dir "$USR_DIR/src/libogg"
   
   local LIBOGG_TB="http://downloads.xiph.org/releases/ogg/libogg-1.3.1.tar.gz"
   
   echo "Installing libogg from $LIBOGG_TB"
-  mkdir "$USR_DIR/src/libogg"
+  wget -O - $LIBOGG_TB | tar zxvf - -C "$USR_DIR/src/libogg" --strip-components 1
   cd "$USR_DIR/src/libogg"
-  
-  wget $LIBOGG_TB
-  tar xzvf libogg-1.3.1.tar.gz
-  cd libogg-1.3.1
   
   ./configure \
     --prefix=$USR_DIR \
@@ -341,16 +338,13 @@ chinachu_installer_libogg () {
 
 chinachu_installer_libvorbis () {
   remove_dir "$USR_DIR/src/libvorbis"
+  ensure_dir "$USR_DIR/src/libvorbis"
   
   local LIBVORBIS_TB="http://downloads.xiph.org/releases/vorbis/libvorbis-1.3.3.tar.gz"
   
   echo "Installing libvorbis from $LIBVORBIS_TB"
-  mkdir "$USR_DIR/src/libvorbis"
+  wget -O - $LIBVORBIS_TB | tar zxvf - -C "$USR_DIR/src/libvorbis" --strip-components 1
   cd "$USR_DIR/src/libvorbis"
-  
-  wget $LIBVORBIS_TB
-  tar xzvf libvorbis-1.3.3.tar.gz
-  cd libvorbis-1.3.3
   
   ./configure \
     --prefix=$USR_DIR \
@@ -371,16 +365,13 @@ chinachu_installer_libvorbis () {
 
 chinachu_installer_ffmpeg () {
   remove_dir "$USR_DIR/src/ffmpeg"
+  ensure_dir "$USR_DIR/src/ffmpeg"
   
-  local FFMPEG_TB="http://ffmpeg.org/releases/ffmpeg-2.6.1.tar.bz2"
+  local FFMPEG_TB="http://ffmpeg.org/releases/ffmpeg-2.8.2.tar.bz2"
   
   echo "Installing ffmpeg from $FFMPEG_TB"
-  mkdir "$USR_DIR/src/ffmpeg"
+  wget -O - $FFMPEG_TB | tar jxvf - -C "$USR_DIR/src/ffmpeg" --strip-components 1
   cd "$USR_DIR/src/ffmpeg"
-
-  wget $FFMPEG_TB -O ffmpeg.tar.bz2
-  tar xjvf ffmpeg.tar.bz2
-  cd ffmpeg-2.6.1
   
   ./configure \
     --prefix=$USR_DIR \
@@ -856,24 +847,6 @@ chinachu_cleanup () {
     case ${line:-y} in
       [yY])
         node app-cli.js -mode cleanup "$@" && return 0
-        ;;
-      [nN])
-        echo "Abort." && return 0
-        ;;
-    esac
-  done
-}
-
-chinachu_unlock () {
-  echo "Unlock the tuners."
-  echo "*WARNING* Do NOT run this command when on running Chinachu services."
-  
-  while [ 1 ]; do
-    echo -n "Are you sure [y/n]? "
-    read line
-    case $line in
-      [yY])
-        rm -vf "${CHINACHU_DIR}"/data/tuner.*.priority && rm -vf "${CHINACHU_DIR}"/data/tuner.*.lock && echo "done." && return 0
         ;;
       [nN])
         echo "Abort." && return 0
