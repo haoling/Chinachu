@@ -257,6 +257,7 @@ function main(avinfo) {
 					ffmpeg.stdout.removeAllListeners('data');
 					ffmpeg.stderr.removeAllListeners('data');
 					ffmpeg.kill('SIGKILL');
+					util.log('KILL: ffmpeg (pid=' + ffmpeg.pid + ')');
 				});
 			}
 

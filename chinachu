@@ -205,7 +205,8 @@ chinachu_installer_ffmpeg () {
   remove_dir "$USR_DIR/src/ffmpeg"
   ensure_dir "$USR_DIR/src/ffmpeg"
   
-  local FFMPEG_TB="http://ffmpeg.org/releases/ffmpeg-2.8.2.tar.bz2"
+  #local FFMPEG_TB="http://ffmpeg.org/releases/ffmpeg-2.8.2.tar.bz2"
+  local FFMPEG_TB="http://ffmpeg.org/releases/ffmpeg-3.0.2.tar.bz2"
   
   echo "Installing ffmpeg from $FFMPEG_TB"
   wget -O - $FFMPEG_TB | tar jxvf - -C "$USR_DIR/src/ffmpeg" --strip-components 1
