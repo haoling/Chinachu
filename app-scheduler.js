@@ -161,7 +161,7 @@ function outputReserves() {
 // scheduler
 function scheduler() {
 	
-	var i, j, k, l, a;
+	var i, j, k, l, a, b;
 	var commandProcess;
 	
 	util.log('RUNNING SCHEDULER.');
@@ -257,7 +257,7 @@ function scheduler() {
 		a = matches[i];
 		
 		for (j = 0; j < matches.length; j++) {
-			var b = matches[j];
+			b = matches[j];
 			
 			if (b.isDuplicate || b.isSkip) { continue; }
 			
@@ -326,6 +326,7 @@ function scheduler() {
 	}
 	
 	// reserve
+	var oldReserves = reserves;
 	reserves = [];
 	var reservedCount = 0;
 	var skipCount     = 0;
@@ -338,8 +339,19 @@ function scheduler() {
 			if (a.isSkip) {
 				util.log('!!!SKIP: ' + a.id + ' ' + dateFormat(new Date(a.start), 'isoDateTime') + ' [' + a.channel.name + '] ' + a.title);
 				++skipCount;
+			} else if (a.end < Date.now()) {
+				util.log('!!!SKIP: ' + a.id + ' ' + dateFormat(new Date(a.start), 'isoDateTime') + ' [' + a.channel.name + '] ' + a.title);
+				++skipCount;
 			} else if (!a.isConflict) {
-				util.log('RESERVE: ' + a.id + ' ' + dateFormat(new Date(a.start), 'isoDateTime') + ' [' + a.channel.name + '] ' + a.title);
+				var isNewReserve = true;
+				for (j = 0; j < oldReserves.length; j++) {
+					b = oldReserves[j];
+					if (a.id === b.id) {
+						isNewReserve = false;
+						break;
+					}
+				}
+				util.log((isNewReserve ? 'NEW ' : '') + 'RESERVE: ' + a.id + ' ' + dateFormat(new Date(a.start), 'isoDateTime') + ' [' + a.channel.name + '] ' + a.title);
 				++reservedCount;
 			} else {
 				// 競合したときのログは既に出力済み
