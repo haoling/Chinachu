@@ -22,6 +22,11 @@
 					newRule.isDisabled = true;
 				}
 				delete newRule.isEnabled;
+
+				if (newRule.doReserve === false) {
+					newRule.skipReserve = true;
+				}
+				delete newRule.doReserve;
 				
 				data.rules.splice(data.rules.indexOf(rule), 1, newRule);
 				fs.writeFileSync(define.RULES_FILE, JSON.stringify(data.rules, null, '  '));

@@ -18,6 +18,11 @@
 				}
 				delete newRule.isEnabled;
 				
+				if (newRule.doReserve === false) {
+					newRule.skipReserve = true;
+				}
+				delete newRule.doReserve;
+				
 				data.rules.push(newRule);
 				fs.writeFileSync(define.RULES_FILE, JSON.stringify(data.rules, null, '  '));
 				

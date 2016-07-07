@@ -28,6 +28,7 @@ if (!fs.existsSync('./data/') || !fs.existsSync('./log/') || !fs.existsSync('./w
 
 // 追加モジュールのロード
 var Swagger    = require('swagger-client');
+var request    = require('request');
 var opts       = require('opts');
 var xml2js     = require('xml2js');
 var xmlParser  = new xml2js.Parser();
@@ -330,9 +331,8 @@ function scheduler() {
 	reserves = [];
 	var reservedCount = 0;
 	var skipCount     = 0;
-	for (i = 0; i < matches.length; i++) {
-		a = matches[i];
-		
+	var notifyReserves = {};
+	matches.forEach(function(a){
 		if (!a.isDuplicate) {
 			reserves.push(a);
 			
@@ -353,17 +353,30 @@ function scheduler() {
 				}
 				util.log((isNewReserve ? 'NEW ' : '') + 'RESERVE: ' + a.id + ' ' + dateFormat(new Date(a.start), 'isoDateTime') + ' [' + a.channel.name + '] ' + a.title);
 				++reservedCount;
+
+				rules.forEach(function (rule) {
+					if (! chinachu.programMatchesRule(rule, a, config.normalizationForm)) return;
+					if (typeof rule.notifySlack !== undefined && rule.notifySlack) {
+						var title = rule.reserve_titles.join(', ');
+						if (notifyReserves[title] == undefined) notifyReserves[title] = [];
+						notifyReserves[title].push(a);
+					}
+				});
 			} else {
 				// 競合したときのログは既に出力済み
 			}
 		}
-	}
+	});
 	
 	// ruleにもしあればreserveにrecordedFormatを追加
 	reserves.forEach(function (reserve) {
 		rules.forEach(function (rule) {
-			if (typeof rule.recorded_format !== 'undefined' && chinachu.programMatchesRule(rule, reserve, config.normalizationForm)) {
+			if (! chinachu.programMatchesRule(rule, reserve, config.normalizationForm)) return;
+			if (typeof rule.recorded_format !== 'undefined') {
 				reserve.recordedFormat = rule.recorded_format;
+			}
+			if (typeof rule.skipReserve !== undefined && rule.skipReserve) {
+				reserve.isSkip = true;
 			}
 		});
 	});
@@ -374,6 +387,54 @@ function scheduler() {
 	util.log('CONFLICTS: ' + conflictCount.toString(10));
 	util.log('SKIPS: ' + skipCount.toString(10));
 	util.log('RESERVES: ' + reservedCount.toString(10));
+
+	if (typeof config.slackNotifyUrl !== undefined && config.slackNotifyUrl != '') {
+		var requests_count = 0;
+		for (var title in notifyReserves) {
+			var attachments = [];
+			notifyReserves[title].forEach(function(p){
+				console.log(p);
+				attachments.push({
+					title: p.fullTitle,
+					title_link: config.baseUrl + '#!/program/view/id=' + p.id + '/',
+					text: p.detail,
+					fields: [
+						{
+							title: '開始日時',
+							value: dateFormat(new Date(p.start), 'yyyy/mm/dd HH:MM:ss'),
+							short: true
+						},
+						{
+							title: '終了日時',
+							value: dateFormat(new Date(p.end), 'yyyy/mm/dd HH:MM:ss'),
+							short: true
+						},
+						{
+							title: '放送局',
+							value: '[' + p.channel.id + '] ' + p.channel.name,
+							short: true
+						},
+						{
+							title: 'ジャンル',
+							value: p.category,
+							short: true
+						},
+					]
+				});
+			});
+	
+			var options = {
+				uri: config.slackNotifyUrl,
+				headers: { 'Content-Type': 'application/json' },
+				json: {
+					text: '新しい番組を見つけましたよ！',
+					attachments: attachments
+				}
+			};
+			requests_count++;
+			request.post(options, function(){ requests_count--; });
+		}
+	}
 	
 	if (!opts.get('s')) {
 		outputReserves();
@@ -385,7 +446,10 @@ function scheduler() {
 	}
 	
 	// プロセス終了
-	process.exit(0);
+	setInterval(function(){
+		if (requests_count > 0) return;
+		process.exit(0);
+	}, 500);
 }
 
 // (function) program converter

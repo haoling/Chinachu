@@ -1335,6 +1335,24 @@
 									}
 								},
 								{
+									key   : 'doReserve',
+									label : '予約',
+									input : {
+										type : 'checkbox',
+										label: '予約する',
+										val  : !rule.skipReserve
+									}
+								},
+								{
+									key   : 'notifySlack',
+									label : '通知',
+									input : {
+										type : 'checkbox',
+										label: 'Slackに通知する',
+										val  : rule.notifySlack
+									}
+								},
+								{
 									key   : 'isEnabled',
 									label : 'ルールの状態',
 									input : {
@@ -1566,6 +1584,23 @@
 							input	: {
 								type	: 'text',
 								style	: { width: '100%' },
+							}
+						},
+						{
+							key   : 'doReserve',
+							label : '予約',
+							input : {
+								type : 'checkbox',
+								label: '予約する',
+								val  : true
+							}
+						},
+						{
+							key   : 'notifySlack',
+							label : '通知',
+							input : {
+								type : 'checkbox',
+								label: 'Slackに通知する',
 							}
 						},
 						{
@@ -1803,6 +1838,23 @@
 							input	: {
 								type	: 'text',
 								style	: { width: '100%' },
+							}
+						},
+						{
+							key   : 'doReserve',
+							label : '予約',
+							input : {
+								type : 'checkbox',
+								label: '予約する',
+								val  : true
+							}
+						},
+						{
+							key   : 'notifySlack',
+							label : '通知',
+							input : {
+								type : 'checkbox',
+								label: 'Slackに通知する',
 							}
 						},
 						{
