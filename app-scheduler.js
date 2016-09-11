@@ -354,14 +354,16 @@ function scheduler() {
 				util.log((isNewReserve ? 'NEW ' : '') + 'RESERVE: ' + a.id + ' ' + dateFormat(new Date(a.start), 'isoDateTime') + ' [' + a.channel.name + '] ' + a.title);
 				++reservedCount;
 
-				rules.forEach(function (rule) {
-					if (! chinachu.programMatchesRule(rule, a, config.normalizationForm)) return;
-					if (typeof rule.notifySlack !== undefined && rule.notifySlack) {
-						var title = rule.reserve_titles.join(', ');
-						if (notifyReserves[title] == undefined) notifyReserves[title] = [];
-						notifyReserves[title].push(a);
-					}
-				});
+				if (isNewReserve) {
+					rules.forEach(function (rule) {
+						if (! chinachu.programMatchesRule(rule, a, config.normalizationForm)) return;
+						if (typeof rule.notifySlack !== undefined && rule.notifySlack) {
+							var title = rule.reserve_titles.join(', ');
+							if (notifyReserves[title] == undefined) notifyReserves[title] = [];
+							notifyReserves[title].push(a);
+						}
+					});
+				}
 			} else {
 				// 競合したときのログは既に出力済み
 			}
@@ -376,7 +378,15 @@ function scheduler() {
 				reserve.recordedFormat = rule.recorded_format;
 			}
 			if (typeof rule.skipReserve !== undefined && rule.skipReserve) {
-				reserve.isSkip = true;
+				var isNewReserve = true;
+				for (j = 0; j < oldReserves.length; j++) {
+					b = oldReserves[j];
+					if (reserve.id === b.id) {
+						isNewReserve = false;
+						break;
+					}
+				}
+				if (isNewReserve) reserve.isSkip = true;
 			}
 		});
 	});
