@@ -129,7 +129,7 @@ function main(avinfo) {
 				var pi = path.parse(chinachu.formatRecordedName(program, program.recordedFormat || config.recordedFormat));
 				response.setHeader('Content-disposition', 'attachment; filename*=UTF-8\'\'' + encodeURIComponent(pi.name + '.' + request.query.ext));
 			}
-			
+
 			// Ranges Support
 			var range = {};
 			if (request.type === 'mp4') {
