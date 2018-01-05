@@ -154,12 +154,6 @@
 					"label": "Watch",
 					"title": "Watch",
 					"icon" : "./icons/film-youtube.png"
-				},
-				
-				"download": {
-					"label": "Download",
-					"title": "Download",
-					"icon" : "./icons/disk.png"
 				}
 			}
 		},

@@ -204,91 +204,23 @@ chinachu_installer_epgdump () {
 chinachu_installer_ffmpeg () {
   remove_dir "$USR_DIR/src/ffmpeg"
   ensure_dir "$USR_DIR/src/ffmpeg"
+
+  cd $USR_DIR
+
+  MACHINE=`uname -m`
+  if [ ${MACHINE} == "x86_64" ]; then
+    local FFMPEG_FN="ffmpeg-release-64bit-static"
+  else
+    local FFMPEG_FN="ffmpeg-release-32bit-static"
+  fi
   
-  local FFMPEG_TB="http://ffmpeg.org/releases/ffmpeg-2.8.2.tar.bz2"
-  
-  echo "Installing ffmpeg from $FFMPEG_TB"
-  wget -O - $FFMPEG_TB | tar jxvf - -C "$USR_DIR/src/ffmpeg" --strip-components 1
-  cd "$USR_DIR/src/ffmpeg"
-  
-  ./configure \
-    --prefix=$USR_DIR \
-    --enable-static \
-    --disable-shared \
-    --enable-nonfree \
-    --enable-gpl \
-    --disable-ffplay \
-    --disable-avdevice \
-    --disable-network \
-    --disable-devices \
-    --enable-libx264 \
-    --enable-libvpx \
-    --enable-libfdk-aac \
-    --enable-libvorbis \
-    --disable-debug \
-    --disable-decoders \
-    --disable-encoders \
-    --disable-demuxers \
-    --disable-muxers \
-    --disable-parsers \
-    --disable-protocols \
-    --disable-filters \
-    --enable-zlib \
-    --enable-decoder=aac \
-    --enable-decoder=ac3 \
-    --enable-decoder=mp2 \
-    --enable-decoder=mp3 \
-    --enable-decoder=mpeg2video \
-    --enable-decoder=mpeg4 \
-    --enable-decoder=pcm_alaw \
-    --enable-decoder=pcm_bluray \
-    --enable-decoder=h264 \
-    --enable-encoder=aac \
-    --enable-encoder=png \
-    --enable-encoder=mjpeg \
-    --enable-encoder=libx264 \
-    --enable-encoder=libvorbis \
-    --enable-encoder=libvpx_vp8 \
-    --enable-encoder=libfdk_aac \
-    --enable-encoder=mpeg2video \
-    --enable-encoder=mpeg4 \
-    --enable-encoder=nvenc \
-    --enable-demuxer=mpegts \
-    --enable-muxer=gif \
-    --enable-muxer=mjpeg \
-    --enable-muxer=mp4 \
-    --enable-muxer=mpegts \
-    --enable-muxer=webm \
-    --enable-muxer=image2 \
-    --enable-parser=aac \
-    --enable-parser=ac3 \
-    --enable-parser=h264 \
-    --enable-parser=hevc \
-    --enable-parser=mjpeg \
-    --enable-parser=mpeg4video \
-    --enable-parser=mpegaudio \
-    --enable-parser=mpegvideo \
-    --enable-parser=opus \
-    --enable-parser=png \
-    --enable-parser=vorbis \
-    --enable-parser=vp8 \
-    --enable-protocol=pipe \
-    --enable-protocol=file \
-    --enable-filter=crop \
-    --enable-filter=hqdn3d \
-    --enable-filter=pad \
-    --enable-filter=resample \
-    --enable-filter=aresample \
-    --enable-filter=scale \
-    --enable-filter=setpts \
-    --enable-filter=settb \
-    --enable-filter=yadif \
-    --enable-filter=trim \
-    --extra-cflags="-I${USR_DIR}/include --static" \
-    --extra-ldflags="-L${USR_DIR}/lib"
-  
-  make || fail "couldn't make ffmpeg"
-  make install && make clean
+  local FFMPEG_XZ="http://johnvansickle.com/ffmpeg/releases/${FFMPEG_FN}.tar.xz"
+
+  wget $FFMPEG_XZ
+  xz -dv "${FFMPEG_FN}.tar.xz"
+
+  tar -xvf "${FFMPEG_FN}.tar" -C bin --strip-components 1
+  rm -v "${FFMPEG_FN}.tar"
   
   cd $CHINACHU_DIR
   

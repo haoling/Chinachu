@@ -127,20 +127,20 @@ P = Class.create(P, {
 						return;
 					}
 
-						modal.close();
+					modal.close();
 
-						this.play();
-					}.bind(this)
-				},
-				{
-					label  : 'XSPF',
-					color  : '@orange',
-					onSelect: function(e, modal) {
-						if (this.form.validate() === false) { return; }
+					this.play();
+				}.bind(this)
+			},
+			{
+				label  : 'XSPF',
+				color  : '@orange',
+				onSelect: function(e, modal) {
+					if (this.form.validate() === false) { return; }
 
-						var d = this.form.result();
+					var d = this.form.result();
 
-						saveSettings(d);
+					saveSettings(d);
 
 					if (program._isRecording) {
 						d.prefix = window.location.protocol + '//' + window.location.host;
