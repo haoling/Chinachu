@@ -562,7 +562,6 @@ P = Class.create(P, {
 		}).insertTo(this.view.content);
 
 		var seek = control.getElementByKey('seek');
-		var seekTimer = 0;
 
 		var seekSlideEvent = function() {
 			var value = seek.getValue();
@@ -570,21 +569,17 @@ P = Class.create(P, {
 			d.ss = value;
 			var uri = getRequestURI();
 
-			if (seekTimer != 0) clearTimeout(seekTimer);
-			seekTimer = setTimeout(function(){
-				seekTimer = 0;
-				seek.disable();
-				fastForward.disable();
-				fastRewind.disable();
-	
-				video.src = uri;
-				video.play();
-	
-				setTimeout(function() {
-					seek.enable();
-					fastForward.enable();
-					fastRewind.enable();
-				}, 1000);
+			seek.disable();
+			fastForward.disable();
+			fastRewind.disable();
+
+			video.src = uri;
+			video.play();
+
+			setTimeout(function() {
+				seek.enable();
+				fastForward.enable();
+				fastRewind.enable();
 			}, 1000);
 		};
 
