@@ -358,9 +358,9 @@ function scheduler() {
 					rules.forEach(function (rule) {
 						if (! chinachu.programMatchesRule(rule, a, config.normalizationForm)) return;
 						if (typeof rule.notifySlack !== undefined && rule.notifySlack) {
-							var title = rule.reserve_titles.join(', ');
-							if (notifyReserves[title] == undefined) notifyReserves[title] = [];
-							notifyReserves[title].push(a);
+							var idx = JSON.stringify(rule);
+							if (notifyReserves[idx] == undefined) notifyReserves[idx] = [];
+							notifyReserves[idx].push(a);
 						}
 					});
 				}
