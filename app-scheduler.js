@@ -7,18 +7,18 @@
 /*jslint node:true, nomen:true, plusplus:true, regexp:true, vars:true, continue:true */
 'use strict';
 
-var PID_FILE = __dirname + '/data/scheduler.pid';
+const PID_FILE = __dirname + '/data/scheduler.pid';
 
-var CONFIG_FILE         = __dirname + '/config.json';
-var RULES_FILE          = __dirname + '/rules.json';
-var RESERVES_DATA_FILE  = __dirname + '/data/reserves.json';
-var SCHEDULE_DATA_FILE  = __dirname + '/data/schedule.json';
+const CONFIG_FILE = __dirname + '/config.json';
+const RULES_FILE = __dirname + '/rules.json';
+const RESERVES_DATA_FILE = __dirname + '/data/reserves.json';
+const SCHEDULE_DATA_FILE = __dirname + '/data/schedule.json';
 
 // 標準モジュールのロード
-var path          = require('path');
-var fs            = require('fs');
-var util          = require('util');
-var child_process = require('child_process');
+const path = require('path');
+const fs = require('fs');
+const util = require('util');
+const child_process = require('child_process');
 
 // ディレクトリチェック
 if (!fs.existsSync('./data/') || !fs.existsSync('./log/') || !fs.existsSync('./web/')) {
@@ -27,13 +27,13 @@ if (!fs.existsSync('./data/') || !fs.existsSync('./log/') || !fs.existsSync('./w
 }
 
 // 追加モジュールのロード
-var Swagger    = require('swagger-client');
-var request    = require('request');
-var opts       = require('opts');
-var xml2js     = require('xml2js');
-var xmlParser  = new xml2js.Parser();
-var dateFormat = require('dateformat');
-var chinachu   = require('chinachu-common');
+const Swagger = require('swagger-client');
+const request = require('request');
+const opts = require('opts');
+const xml2js = require('xml2js');
+const xmlParser = new xml2js.Parser();
+const dateFormat = require('dateformat');
+const chinachu = require('chinachu-common');
 
 // 引数
 opts.parse([
