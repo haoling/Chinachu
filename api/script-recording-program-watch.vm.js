@@ -46,30 +46,27 @@
 
 			var d = {
 				ss   : request.query.ss     || null, //start(seconds)
-				t    : request.query.t      || null,//duration(seconds)
-				s    : request.query.s      || null,//size(WxH)
-				f    : request.query.f      || null,//format
-				'c:v': request.query['c:v'] || null,//vcodec
-				'c:a': request.query['c:a'] || null,//acodec
-				'b:v': request.query['b:v'] || null,//bitrate
-				'b:a': request.query['b:a'] || null,//ab
-				ar   : request.query.ar     || null,//ar(Hz)
-				r    : request.query.r      || null//rate(fps)
+				t    : request.query.t      || null, //duration(seconds)
+				s    : request.query.s      || null, //size(WxH)
+				f    : request.query.f      || null, //format
+				'c:v': request.query['c:v'] || null, //vcodec
+				'c:a': request.query['c:a'] || null, //acodec
+				'b:v': request.query['b:v'] || null, //bitrate
+				'b:a': request.query['b:a'] || null, //ab
+				ar   : request.query.ar     || null, //ar(Hz)
+				r    : request.query.r      || null  //rate(fps)
 			};
 
 			switch (request.type) {
 				case 'm2ts':
-					d.f      = 'mpegts';
-					break;
-				case 'mp4':
-					d.f      = 'mp4';
-					d['c:v'] = d['c:v'] || 'libx264';
-					d['c:a'] = d['c:a'] || 'aac';
+					d.f = 'mpegts';
+					d['c:v'] = d['c:v'] || 'copy';
+					d['c:a'] = d['c:a'] || 'copy';
 					break;
 				case 'webm':
-					d.f      = 'webm';
-					d['c:v'] = d['c:v'] || 'libvpx';
-					d['c:a'] = d['c:a'] || 'libvorbis';
+					d.f = 'webm';
+					d['c:v'] = d['c:v'] || 'vp9';
+					d['c:a'] = null;
 					break;
 			}
 
@@ -77,39 +74,79 @@
 
 			if (!request.query.debug) args.push('-v', '0');
 
+			if (config.vaapiEnabled === true) {
+				args.push("-vaapi_device", config.vaapiDevice || '/dev/dri/renderD128');
+				args.push("-hwaccel", "vaapi");
+				args.push("-hwaccel_output_format", "yuv420p");
+			}
+
 			if (d.ss) args.push('-ss', (parseInt(d.ss, 10) - 1) + '');
 
 			args.push('-re', '-i', (!d.ss) ? 'pipe:0' : program.recorded);
-			args.push('-ss', '2');
 
 			if (d.t) { args.push('-t', d.t); }
 
-			args.push('-threads', 'auto');
+			args.push('-threads', '0');
 
-			if (d['c:v']) args.push('-c:v', d['c:v']);
+			if (config.vaapiEnabled === true) {
+				let scale = "";
+				if (d.s) {
+					let [width, height] = d.s.split("x");
+					scale = `,scale_vaapi=w=${width}:h=${height}`;
+				}
+				args.push("-vf", `format=nv12|vaapi,hwupload,deinterlace_vaapi${scale}`);
+				args.push("-aspect", "16:9")
+			} else {
+				args.push('-filter:v', 'yadif');
+			}
+
+			if (d['c:v']) {
+				if (config.vaapiEnabled === true) {
+					if (d['c:v'] === "mpeg2video") {
+						d['c:v'] = "mpeg2_vaapi";
+					}
+					if (d['c:v'] === "h264") {
+						d['c:v'] = "h264_vaapi";
+					}
+					if (d['c:v'] === "vp9") {
+						d['c:v'] = "vp8_vaapi";
+					}
+				}
+				args.push('-c:v', d['c:v']);
+			}
 			if (d['c:a']) args.push('-c:a', d['c:a']);
 
-			if (d.s)  args.push('-s', d.s);
+			if (d.s) {
+				if (config.vaapiEnabled !== true) {
+					args.push('-s', d.s);
+				}
+			}
 			if (d.r)  args.push('-r', d.r);
 			if (d.ar) args.push('-ar', d.ar);
 
-			args.push('-filter:v', 'yadif');
+			if (d['b:v']) {
+				if (d['c:v'] !== 'vp8_vaapi') {
+					args.push('-b:v', d['b:v']);
+				}
+				args.push('-minrate:v', d['b:v'], '-maxrate:v', d['b:v']);
+			}
+			if (d['b:a']) {
+				args.push('-b:a', d['b:a'], '-minrate:a', d['b:a'], '-maxrate:a', d['b:a']);
+			}
 
-			if (d['b:v']) args.push('-b:v', d['b:v']);
-			if (d['b:a']) args.push('-b:a', d['b:a']);
-
-			if (d['c:v'] === 'libx264') {
+			if (d['c:v'] === 'h264') {
 				args.push('-profile:v', 'baseline');
 				args.push('-preset', 'ultrafast');
 				args.push('-tune', 'fastdecode,zerolatency');
 			}
-			if (d['c:v'] === 'libvpx') {
-				args.push('-deadline', 'realtime');
-				args.push('-cpu-used', '-16');
+			if (d['c:v'] === 'h264_vaapi') {
+				args.push('-profile', '77');
+				args.push('-level', '41');
 			}
-
-			if (d.f === 'mp4') {
-				args.push('-movflags', 'frag_keyframe+empty_moov+faststart+default_base_moof');
+			if (d['c:v'] === 'vp9') {
+				args.push('-deadline', 'realtime');
+				args.push('-speed', '4');
+				args.push('-cpu-used', '-8');
 			}
 
 			args.push('-y', '-f', d.f, 'pipe:1');

@@ -19,7 +19,7 @@ P = Class.create(P, {
 						label: 'ダッシュボード',
 						color: '@pink',
 						onSelect: function(e, modal) {
-							window.location.hash = '!/dashboard/top/';
+							location.hash = '!/dashboard/top/';
 						}
 					}
 				]
@@ -60,7 +60,7 @@ P = Class.create(P, {
 				label  : '番組詳細',
 				icon   : './icons/film.png',
 				onClick: function() {
-					window.location.hash = '!/program/view/id=' + program.id + '/';
+					location.hash = '!/program/view/id=' + program.id + '/';
 				}
 			})
 		});
@@ -105,73 +105,115 @@ P = Class.create(P, {
 			set['b:v'] = '1M';
 		}
 		if (!set['b:a']) {
-			set['b:a'] = '96k';
+			set['b:a'] = '128k';
 		}
 
-		var buttons = [
-			{
+		var buttons = [];
+
+		if (Prototype.Browser.MobileSafari) {
+			buttons.push({
 				label  : '再生',
 				color  : '@pink',
 				onSelect: function(e, modal) {
-					if (this.form.validate() === false) { return; }
 
-					var d = this.d = this.form.result();
+					this.form.validate(function (success) {
+						if (!success) { return; }
 
-					saveSettings(d);
+						var d = this.d = this.form.getResult();
+						saveSettings(d);
 
-					if (d.ext === 'm2ts') {
-						new flagrate.Modal({
-							title: 'エラー',
-							text : 'MPEG-2 TSコンテナの再生はサポートしていません。'
-						}).show();
-						return;
-					}
+						var url = location.host + location.pathname.replace(/\/[^\/]*$/, '');
 
-					modal.close();
+						if (program._isRecording) {
+							url += '/api/recording/';
+						} else {
+							url += '/api/recorded/';
+						}
 
-					this.play();
+						url += program.id + '/watch.' + d.ext + '?' + Object.toQueryString(d);
+
+						if (/Android/.test(navigator.userAgent) === true) {
+							location.href = "intent://" + url + "#Intent;package=org.videolan.vlc;type=video;scheme=" + location.protocol.replace(':','') + ';end';
+						} else {
+							location.href = "vlc-x-callback://x-callback-url/stream?url=" + encodeURIComponent(location.protocol + '//' + url);
+						}
+					}.bind(this));
 				}.bind(this)
-			},
-			{
+			});
+		} else {
+			buttons.push({
+				label  : '再生',
+				color  : '@pink',
+				onSelect: function(e, modal) {
+
+					this.form.validate(function (success) {
+						if (!success) { return; }
+
+						var d = this.d = this.form.getResult();
+						saveSettings(d);
+
+						if (d.ext === 'm2ts') {
+							new flagrate.Modal({
+								title: 'エラー',
+								text : 'MPEG-2 TSコンテナの再生はサポートしていません。'
+							}).show();
+							return;
+						}
+
+						modal.close();
+						this.play();
+					}.bind(this));
+				}.bind(this)
+			});
+
+			buttons.push({
 				label  : 'XSPF',
 				color  : '@orange',
 				onSelect: function(e, modal) {
-					if (this.form.validate() === false) { return; }
 
-					var d = this.form.result();
+					this.form.validate(function (success) {
+						if (!success) { return; }
 
-					saveSettings(d);
+						var d = this.form.getResult();
+						saveSettings(d);
 
-					if (program._isRecording) {
-						d.prefix = window.location.protocol + '//' + window.location.host;
-						d.prefix += window.location.pathname.replace(/\/[^\/]*$/, '') + '/api/recording/' + program.id + '/';
-						window.open('./api/recording/' + program.id + '/watch.xspf?' + Object.toQueryString(d));
-					} else {
-						d.prefix = window.location.protocol + '//' + window.location.host;
-						d.prefix += window.location.pathname.replace(/\/[^\/]*$/, '') + '/api/recorded/' + program.id + '/';
-						window.open('./api/recorded/' + program.id + '/watch.xspf?' + Object.toQueryString(d));
-					}
+						var url = d.prefix = location.protocol + '//' + location.host + location.pathname.replace(/\/[^\/]*$/, '');
+
+						if (program._isRecording) {
+							d.prefix += '/api/recording/' + program.id + '/';
+							url += '/api/recording/';
+						} else {
+							d.prefix += '/api/recorded/' + program.id + '/';
+							url += '/api/recorded/';
+						}
+
+						url += program.id + '/watch.xspf?' + Object.toQueryString(d);
+						location.href = url;
+					}.bind(this));
 				}.bind(this)
-			}
-		];
-		if (! program._isRecording) {
+			});
+		}
+
+		if (!Prototype.Browser.MobileSafari && !program._isRecording) {
 			buttons.push({
 				label: 'ダウンロード',
 				color: '@blue',
 				onSelect: function(e, model) {
 
-					if (this.form.validate() === false) { return; }
+					this.form.validate(function (success) {
+						if (!success) { return; }
 
-					var d = this.form.result();
+						var d = this.form.getResult();
+						saveSettings(d);
 
-					saveSettings(d);
-
-					d.prefix = window.location.protocol + '//' + window.location.host + '/api/recording/' + program.id + '/';
-					d.mode = 'download';
-					location.href = './api/recorded/' + program.id + '/watch.' + d.ext + '?' + Object.toQueryString(d);
+						d.prefix = location.protocol + '//' + location.host + '/api/recording/' + program.id + '/';
+						d.mode = 'download';
+						location.href = './api/recorded/' + program.id + '/watch.' + d.ext + '?' + Object.toQueryString(d);
+					}.bind(this));
 				}.bind(this)
 			});
 		}
+
 		var modal = this.modal = new flagrate.Modal({
 			disableCloseByMask: true,
 			disableCloseButton: true,
@@ -180,287 +222,215 @@ P = Class.create(P, {
 			buttons: buttons
 		}).show();
 
-		if (Prototype.Browser.MobileSafari) {
-			modal.buttons[1].disable();
-		}
-
 		var exts = [];
 
 		exts.push({
 			label     : 'M2TS',
-			value     : 'm2ts',
-			isSelected: set.ext === 'm2ts'
+			value     : 'm2ts'
 		});
-
-		exts.push({
-			label     : 'MP4',
-			value     : 'mp4',
-			isSelected: set.ext === 'mp4'
-		});
-
-		if (/Trident/.test(navigator.userAgent) === false) {
+		if (program._isRecorded) {
+			exts.push({
+				label     : 'MP4',
+				value     : 'mp4'
+			});
+		}
+		if (!Prototype.Browser.MobileSafari) {
 			exts.push({
 				label     : 'WebM',
-				value     : 'webm',
-				isSelected: set.ext === 'webm'
+				value     : 'webm'
 			});
 		}
 
-		this.form = new Hyperform({
-			formWidth  : '100%',
-			labelWidth : '100px',
-			labelAlign : 'right',
-			fields     : [
+		this.form = flagrate.createForm({
+			fields: [
 				{
-					key  : 'ext',
-					label: 'コンテナ',
+					key: "ext",
+					label: "コンテナ形式",
 					input: {
-						type      : 'radio',
+						type: "radios",
 						isRequired: true,
-						items     : exts
+						val: set.ext,
+						items: exts
 					}
 				},
 				{
-					key  : 'c:v',
-					label: '映像コーデック',
+					pointer: "/c:v",
+					label: "映像コーデック",
 					input: {
-						type      : 'radio',
+						type: "radios",
 						isRequired: true,
-						items     : [
+						val: set['c:v'],
+						items: [
 							{
-								label     : '無変換',
-								value     : 'copy',
-								isSelected: set['c:v'] === 'copy'
+								label: '無変換',
+								value: 'copy'
 							},
 							{
-								label     : 'H.264',
-								value     : 'libx264',
-								isSelected: set['c:v'] === 'libx264'
+								label: 'H.264',
+								value: 'h264'
 							},
 							{
-								label     : 'MPEG-2',
-								value     : 'mpeg2video',
-								isSelected: set['c:v'] === 'mpeg2video'
+								label: 'MPEG-2',
+								value: 'mpeg2video'
 							}
 						]
 					},
 					depends: [
-						{ key: 'ext', value: 'm2ts' }
+						{ key: "ext", val: "m2ts" }
 					]
 				},
 				{
-					key  : 'c:v',
+					pointer: '/c:v',
 					label: '映像コーデック',
 					input: {
-						type      : 'radio',
+						type: 'radios',
 						isRequired: true,
-						items     : [
+						val: "vp9",
+						items: [
 							{
-								label     : 'VP8',
-								value     : 'libvpx',
-								isSelected: true
+								label: 'VP9',
+								value: 'vp9'
 							}
 						]
 					},
 					depends: [
-						{ key: 'ext', value: 'webm' }
+						{ key: 'ext', val: 'webm' }
 					]
 				},
 				{
-					key  : 'c:v',
+					pointer: '/c:v',
 					label: '映像コーデック',
 					input: {
-						type      : 'radio',
+						type: 'radios',
 						isRequired: true,
-						items     : [
+						val: "h264",
+						items: [
 							{
-								label     : 'H.264',
-								value     : 'libx264',
-								isSelected: true
+								label: 'H.264',
+								value: 'h264'
 							}
 						]
 					},
 					depends: [
-						{ key: 'ext', value: 'mp4' }
+						{ key: 'ext', val: 'mp4' }
 					]
 				},
 				{
-					key  : 'c:v',
-					label: '映像コーデック',
-					input: {
-						type      : 'radio',
-						isRequired: true,
-						items     : [
-							{
-								label     : 'H.264',
-								value     : 'libx264',
-								isSelected: true
-							}
-						]
-					},
-					depends: [
-						{ key: 'ext', value: 'flv' }
-					]
-				},
-				{
-					key  : 'c:a',
+					pointer: '/c:a',
 					label: '音声コーデック',
 					input: {
-						type      : 'radio',
+						type: 'radios',
 						isRequired: true,
-						items     : [
+						val: set['c:a'],
+						items: [
 							{
-								label     : '無変換',
-								value     : 'copy',
-								isSelected: set['c:a'] === 'copy'
+								label: '無変換',
+								value: 'copy'
 							},
 							{
-								label     : 'AAC',
-								value     : 'aac',
-								isSelected: set['c:a'] === 'aac'
+								label: 'AAC',
+								value: 'aac'
 							},
 							{
-								label     : 'Vorbis',
-								value     : 'libvorbis',
-								isSelected: set['c:a'] === 'libvorbis'
+								label: 'Vorbis',
+								value: 'libvorbis'
 							}
 						]
 					},
 					depends: [
-						{ key: 'ext', value: 'm2ts' }
+						{ key: 'ext', val: 'm2ts' }
 					]
 				},
 				{
-					key  : 'c:a',
-					label: '音声コーデック',
-					input: {
-						type      : 'radio',
-						isRequired: true,
-						items     : [
-							{
-								label     : 'Vorbis',
-								value     : 'libvorbis',
-								isSelected: true
-							}
-						]
-					},
-					depends: [
-						{ key: 'ext', value: 'webm' }
-					]
-				},
-				{
-					key  : 's',
+					key: 's',
 					label: 'サイズ',
 					input: {
-						type      : 'slider',
+						type: 'select',
 						isRequired: true,
-						items     : [
+						val: set.s,
+						items: [
 							{
-								label     : '960x540 (qHD/16:9)',
-								value     : '960x540',
-								isSelected: set['s'] === '960x540'
+								label: '576p (WSVGA)',
+								value: '1024x576'
 							},
 							{
-								label     : '1024x576 (WSVGA/16:9)',
-								value     : '1024x576',
-								isSelected: set['s'] === '1024x576'
+								label: '720p (HD)',
+								value: '1280x720'
 							},
 							{
-								label     : '1280x720 (HD/16:9)',
-								value     : '1280x720',
-								isSelected: set['s'] === '1280x720'
-							},
-							{
-								label     : '1920x1080 (FHD/16:9)',
-								value     : '1920x1080',
-								isSelected: set['s'] === '1920x1080'
+								label: '1080p (FHD)',
+								value: '1920x1080'
 							}
 						]
 					},
 					depends: [
-						{ key: 'c:v', value: 'copy', operator: '!==' }
+						{ pointer: '/c:v', val: 'copy', op: '!==' }
 					]
 				},
 				{
-					key  : 'b:v',
+					key: 'b:v',
 					label: '映像ビットレート',
 					input: {
-						type      : 'slider',
+						type: 'radios',
 						isRequired: true,
-						items     : [
+						val: set['b:v'],
+						items: [
 							{
-								label     : '256kbps',
-								value     : '256k',
-								isSelected: set['b:v'] === '256k'
+								label: '256kbps',
+								value: '256k'
 							},
 							{
-								label     : '512kbps',
-								value     : '512k',
-								isSelected: set['b:v'] === '512k'
+								label: '512kbps',
+								value: '512k'
 							},
 							{
-								label     : '1Mbps',
-								value     : '1M',
-								isSelected: set['b:v'] === '1M'
+								label: '1Mbps',
+								value: '1M'
 							},
 							{
-								label     : '2Mbps',
-								value     : '2M',
-								isSelected: set['b:v'] === '2M'
+								label: '2Mbps',
+								value: '2M'
 							},
 							{
-								label     : '3Mbps',
-								value     : '3M',
-								isSelected: set['b:v'] === '3M'
+								label: '3Mbps',
+								value: '3M'
 							}
 						]
 					},
 					depends: [
-						{ key: 'c:v', value: 'copy', operator: '!==' }
+						{ pointer: '/c:v', val: 'copy', op: '!==' }
 					]
 				},
 				{
-					key  : 'b:a',
+					key: 'b:a',
 					label: '音声ビットレート',
 					input: {
-						type      : 'slider',
+						type: 'radios',
 						isRequired: true,
-						items     : [
+						val: set['b:a'],
+						items: [
 							{
-								label     : '32kbps',
-								value     : '32k',
-								isSelected: set['b:a'] === '32k'
+								label: '64kbps',
+								value: '64k'
 							},
 							{
-								label     : '64kbps',
-								value     : '64k',
-								isSelected: set['b:a'] === '64k'
+								label: '128kbps',
+								value: '128k'
 							},
 							{
-								label     : '96kbps',
-								value     : '96k',
-								isSelected: set['b:a'] === '96k'
-							},
-							{
-								label     : '128kbps',
-								value     : '128k',
-								isSelected: set['b:a'] === '128k'
-							},
-							{
-								label     : '192kbps',
-								value     : '192k',
-								isSelected: set['b:a'] === '192k'
+								label: '192kbps',
+								value: '192k'
 							}
 						]
 					},
 					depends: [
-						{ key: 'c:a', value: 'copy', operator: '!==' }
+						{ pointer: '/c:a', val: 'copy', op: '!==' }
 					]
 				}
 			]
 		});
 
-		this.form.render(modal.content);
+		this.form.insertTo(modal.content);
 
 		return this;
 	}
@@ -478,9 +448,18 @@ P = Class.create(P, {
 
 		var getRequestURI = function() {
 
-			var r = window.location.protocol + '//' + window.location.host + window.location.pathname.replace(/\/[^\/]*$/, '');
+			var r = location.protocol + '//' + location.host + location.pathname.replace(/\/[^\/]*$/, '');
 			r += '/api/' + (!!p._isRecording ? 'recording' : 'recorded') + '/' + p.id + '/watch.' + d.ext;
 			var q = Object.toQueryString(d);
+
+			return r + '?' + q;
+		};
+
+		var getPreviewURI = function(pos) {
+
+			var r = location.protocol + '//' + location.host + location.pathname.replace(/\/[^\/]*$/, '');
+			r += '/api/' + (!!p._isRecording ? 'recording' : 'recorded') + '/' + p.id + '/preview.jpg';
+			var q = 'width=480&height=270&pos=' + pos;
 
 			return r + '?' + q;
 		};
@@ -491,10 +470,8 @@ P = Class.create(P, {
 
 			if (video.paused) {
 				video.play();
-				control.getElementByKey('play').setLabel('Pause');
 			} else {
 				video.pause();
-				control.getElementByKey('play').setLabel('Play');
 			}
 		};
 
@@ -505,8 +482,9 @@ P = Class.create(P, {
 		}).insertTo(this.view.content);
 
 		var video = new flagrate.Element('video', {
-			autoplay: true,
-			controls: true
+			autoplay: false,
+			controls: true,
+			poster: getPreviewURI(0)
 		}).insertTo(videoContainer);
 
 		new flagrate.Element('source', {
@@ -514,7 +492,32 @@ P = Class.create(P, {
 			type    : 'video/' + d.ext
 		}).insertTo(video);
 
-		video.addEventListener('click', togglePlay);
+		//debug
+		window.video = video;
+
+		video.onloadstart = function () {
+			control.getElementByKey('play').setLabelHTML('&#8987;');
+		};
+
+		video.oncanplay = function () {
+			if (video.paused) {
+				control.getElementByKey('play').setLabelHTML('&#57458;');
+			} else {
+				control.getElementByKey('play').setLabelHTML('&#57459;');
+			}
+		};
+
+		video.onpause = function () {
+			control.getElementByKey('play').setLabelHTML('&#57458;');
+			d.ss = seek.getValue() - 2;
+			console.log(d.ss);
+			video.src = getRequestURI();
+		};
+
+		video.onplay = function () {
+			video.poster = "";
+			control.getElementByKey('play').setLabelHTML('&#57459;');
+		};
 
 		video.volume = 1;
 
@@ -527,16 +530,16 @@ P = Class.create(P, {
 			items: [
 				{
 					key    : 'play',
-					element: new flagrate.Button({ label: 'Pause', onSelect: togglePlay})
+					element: new flagrate.Button({ labelHTML: '&#8987;', onSelect: togglePlay})
 				},
 				'--',
 				{
 					key    : 'fast-rewind',
-					element: new flagrate.Button({ label: '<<'})
+					element: new flagrate.Button({ labelHTML: '&#57457;'})
 				},
 				{
 					key    : 'fast-forward',
-					element: new flagrate.Button({ label: '>>'})
+					element: new flagrate.Button({ labelHTML: '&#57461;'})
 				},
 				'--',
 				{
@@ -575,6 +578,9 @@ P = Class.create(P, {
 
 			video.src = uri;
 			video.play();
+
+			lastTime = 0;
+			currentTime = d.ss * 1000;
 
 			setTimeout(function() {
 				seek.enable();
@@ -617,22 +623,25 @@ P = Class.create(P, {
 
 		seek.addEventListener('slide', seekSlideEvent);
 
+		var lastTime = 0;
+		var currentTime = 0;
+
 		var updateTime = function() {
 
 			if (seek.isEnabled() === false) return;
 
-			var current = 0;
+			if (lastTime && video.paused === false) {
+				currentTime += Date.now() - lastTime;
+			}
 
-			current = video.currentTime;
-
-			current += d.ss;
-
-			current = Math.floor(current);
+			var current = Math.floor(currentTime / 1000);
 
 			control.getElementByKey('played').updateText(
 				Math.floor(current / 60).toPaddedString(2) + ':' + (current % 60).toPaddedString(2)
 			);
 			seek.setValue(current);
+
+			lastTime = Date.now();
 		};
 
 		var updateLiveTime = function() {
@@ -654,7 +663,7 @@ P = Class.create(P, {
 		if (p._isRecording) {
 			this.timer.updateLiveTime = setInterval(updateLiveTime, 250);
 		} else {
-			this.timer.updateTime = setInterval(updateTime, 250);
+			this.timer.updateTime = setInterval(updateTime, 100);
 		}
 
 		return this;

@@ -53,11 +53,16 @@
 	var dateToString = chinachu.dateToString = function _dateToString(date, type) {
 		var d = date;
 
-		var dStr = [
-			d.getFullYear(),
-			(d.getMonth() + 1).toPaddedString(2),
-			d.getDate().toPaddedString(2)
-		].join('/') + ' ' + [
+		var dStr = (d.getMonth() + 1).toPaddedString(2) + "/" + d.getDate().toPaddedString(2);
+
+		if (d.getFullYear() !== new Date().getFullYear()) {
+			dStr = d.getFullYear().toString(10).slice(2) + "/" + dStr;
+		}
+
+		var weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+		dStr += " (" + weekDays[d.getDay()] + ")";
+
+		dStr += ' ' + [
 			d.getHours().toPaddedString(2),
 			d.getMinutes().toPaddedString(2)
 		].join(':');
@@ -74,7 +79,7 @@
 				dDelta = dDelta / 60;
 
 				if (dDelta < 60) {
-					dDeltaStr = 'after {0} minutes'.__([Math.round(dDelta * 10) / 10 || '0']);
+					dDeltaStr = 'after {0} minutes'.__([Math.round(dDelta) || '0']);
 				} else {
 					dDelta = dDelta / 60;
 
@@ -83,7 +88,7 @@
 					} else {
 						dDelta = dDelta / 24;
 
-						dDeltaStr = 'after {0} days'.__([Math.round(dDelta * 10) / 10 || '0']);
+						dDeltaStr = 'after {0} days'.__([Math.round(dDelta) || '0']);
 					}
 				}
 			}
@@ -94,7 +99,7 @@
 				dDelta = dDelta / 60;
 
 				if (dDelta < 60) {
-					dDeltaStr = '{0} minutes ago'.__([Math.round(dDelta * 10) / 10 || '0']);
+					dDeltaStr = '{0} minutes ago'.__([Math.round(dDelta) || '0']);
 				} else {
 					dDelta = dDelta / 60;
 
@@ -103,14 +108,14 @@
 					} else {
 						dDelta = dDelta / 24;
 
-						dDeltaStr = '{0} days ago'.__([Math.round(dDelta * 10) / 10 || '0']);
+						dDeltaStr = '{0} days ago'.__([Math.round(dDelta) || '0']);
 					}
 				}
 			}
 		}
 
 		if (typeof type === 'undefined' || type === 'full') {
-			return dStr + ' (' + dDeltaStr + ')';
+			return dStr + ' [' + dDeltaStr + ']';
 		} else if (type === 'short') {
 			return dStr;
 		} else if (type === 'delta') {
@@ -504,7 +509,14 @@
 
 			var wait = 1;
 
-			this.entity = this.entity || new Element(this.tagName, this.attr);
+			if (this.entity) {
+				if (flagrate.Element.exists(this.entity) === false) {
+					this.remove();
+					return;
+				}
+			} else {
+				this.entity = new Element(this.tagName, this.attr);
+			}
 
 			if (this.id !== null) { this.entity.id = this.id; }
 
@@ -646,7 +658,7 @@
 							onSuccess: function () {
 								new flagrate.Modal({
 									title: '成功',
-									text : '予約しました。競合を確認するためスケジューラを実行することをお勧めします'
+									text : '予約しました。'
 								}).show();
 							},
 							onFailure: function (t) {
@@ -659,7 +671,7 @@
 					}.bind(this)
 				});
 
-				if (this.program.channel.type === 'GR') {
+				if (false && this.program.channel.type === 'GR') {
 					buttons.push({
 						label   : '予約 (ワンセグ)',
 						color   : '@red',
@@ -677,7 +689,7 @@
 								onSuccess: function () {
 									new flagrate.Modal({
 										title: '成功',
-										text : '予約しました。スケジューラーを実行して競合を確認することをお勧めします'
+										text : '予約しました。'
 									}).show();
 								},
 								onFailure: function (t) {
@@ -698,10 +710,20 @@
 					}
 				});
 
+				var bitrate = 0;
+				if (this.program.channel.type === "GR") {
+					bitrate = 16.851;
+				} else if (this.program.channel.type === "SKY") {
+					bitrate = 8;
+				} else {
+					bitrate = 24;
+				}
+				var size = Math.round(this.program.seconds * bitrate / 8);
+
 				this.modal = new flagrate.Modal({
 					title   : '手動予約',
 					subtitle: this.program.title + ' #' + this.program.id,
-					text    : '予約しますか？',
+					text    : '予約しますか？ (目安容量: ' + size + ' MB)',
 					buttons : buttons
 				});
 			}
@@ -746,7 +768,7 @@
 									onSuccess: function () {
 										new flagrate.Modal({
 											title: '成功',
-											text : '予約を取り消しました。競合を解決するにはスケジューラを実行する必要があります'
+											text : '予約を取り消しました。'
 										}).show();
 									},
 									onFailure: function (t) {
@@ -808,7 +830,7 @@
 									onSuccess: function () {
 										new flagrate.Modal({
 											title: '成功',
-											text : 'スキップを有効にしました。競合を解決するにはスケジューラを実行する必要があります'
+											text : 'スキップを有効にしました。'
 										}).show();
 									},
 									onFailure: function (t) {
@@ -870,7 +892,7 @@
 									onSuccess: function () {
 										new flagrate.Modal({
 											title: '成功',
-											text : 'スキップを取り消しました。スケジューラーを実行して競合を確認することをお勧めします'
+											text : 'スキップを取り消しました。'
 										}).show();
 									},
 									onFailure: function (t) {
@@ -976,9 +998,9 @@
 				});
 			} else {
 				this.modal = new flagrate.Modal({
-					title   : '録画履歴の削除',
+					title   : '録画履歴とファイルの削除',
 					subtitle: this.program.title + ' #' + this.program.id,
-					text    : '録画履歴を削除すると、システムはこの番組の録画ファイルの場所を見失います。',
+					text    : '録画履歴とファイルを削除しますか？この操作は元に戻せません。',
 
 					buttons: [
 						{
@@ -987,7 +1009,7 @@
 							onSelect: function (e, modal) {
 								e.targetButton.disable();
 
-								var dummy = new Ajax.Request('./api/recorded/' + this.program.id + '.json', {
+								new Ajax.Request('./api/recorded/' + this.program.id + '.json', {
 									method    : 'delete',
 									onComplete: function () {
 										modal.close();
@@ -995,13 +1017,13 @@
 									onSuccess: function () {
 										new flagrate.Modal({
 											title: '成功',
-											text : '録画履歴の削除に成功しました'
+											text : '削除に成功しました'
 										}).show();
 									},
 									onFailure: function (t) {
 										new flagrate.Modal({
 											title: '失敗',
-											text : '録画履歴の削除に失敗しました (' + t.status + ')'
+											text : '削除に失敗しました (' + t.status + ')'
 										}).show();
 									}
 								});
@@ -1032,70 +1054,7 @@
 
 	ui.RemoveRecordedFile = Class.create({
 		initialize: function _init(id) {
-			this.program = util.getProgramById(id);
-
-			this.create();
-
-			return this;
-		},
-		create: function _create() {
-			if (this.program === null) {
-				this.modal = new flagrate.Modal({
-					title: 'エラー',
-					text : '番組が見つかりませんでした'
-				});
-			} else {
-				this.modal = new flagrate.Modal({
-					title: '録画ファイルの削除',
-					subtitle: this.program.title + ' #' + this.program.id,
-					text : '録画ファイルを削除します。これは復元できません。',
-					buttons: [
-						{
-							label  : '削除',
-							color  : '@red',
-							onSelect: function (e, modal) {
-								e.targetButton.disable();
-
-								var dummy = new Ajax.Request('./api/recorded/' + this.program.id + '/file.json', {
-									method    : 'delete',
-									onComplete: function () {
-										modal.close();
-									},
-									onSuccess: function () {
-										new flagrate.Modal({
-											title: '成功',
-											text : '録画ファイルの削除に成功しました'
-										}).show();
-									},
-									onFailure: function (t) {
-
-										var err = t.status;
-
-										if (err === 410) {
-											err += ':既に削除されています';
-										}
-
-										new flagrate.Modal({
-											title: '失敗',
-											text : '録画ファイルの削除に失敗しました (' + err + ')'
-										}).show();
-									}
-								});
-							}.bind(this)
-						},
-						{
-							label  : 'キャンセル',
-							onSelect: function (e, modal) {
-								modal.close();
-							}
-						}
-					]
-				});
-			}
-
-			this.modal.show();
-
-			return this;
+			return new ui.RemoveRecordedProgram(id);
 		}
 	});
 
@@ -1191,7 +1150,7 @@
 									input: {
 										type : 'checkboxes',
 										val  : rule.types,
-										items: ['GR', 'BS', 'CS', 'EX']
+										items: ['GR', 'BS', 'CS', 'SKY']
 									}
 								},
 								{
@@ -1201,8 +1160,8 @@
 										type : 'checkboxes',
 										val  : rule.categories,
 										items: [
-											'anime', 'information', 'news', 'sports',
-											'variety', 'drama', 'music', 'cinema', 'etc'
+											'anime', 'information', 'news', 'sports', 'variety', 'documentary',
+											'drama', 'music', 'cinema', 'theater', 'hobby', 'welfare', 'etc'
 										]
 									}
 								},
@@ -1455,7 +1414,7 @@
 							label: 'タイプ',
 							input: {
 								type : 'checkboxes',
-								items: ['GR', 'BS', 'CS', 'EX']
+								items: ['GR', 'BS', 'CS', 'SKY']
 							}
 						},
 						{
@@ -1464,8 +1423,8 @@
 							input: {
 								type : 'checkboxes',
 								items: [
-									'anime', 'information', 'news', 'sports',
-									'variety', 'drama', 'music', 'cinema', 'etc'
+									'anime', 'information', 'news', 'sports', 'variety', 'documentary',
+									'drama', 'music', 'cinema', 'theater', 'hobby', 'welfare', 'etc'
 								]
 							}
 						},
@@ -1705,7 +1664,7 @@
 							label: 'タイプ',
 							input: {
 								type : 'checkboxes',
-								items: ['GR', 'BS', 'CS', 'EX'],
+								items: ['GR', 'BS', 'CS', 'SKY'],
 								val  : [program.channel.type]
 							}
 						},
@@ -1715,8 +1674,8 @@
 							input: {
 								type : 'checkboxes',
 								items: [
-									'anime', 'information', 'news', 'sports',
-									'variety', 'drama', 'music', 'cinema', 'etc'
+									'anime', 'information', 'news', 'sports', 'variety', 'documentary',
+									'drama', 'music', 'cinema', 'theater', 'hobby', 'welfare', 'etc'
 								],
 								val  : [program.category]
 							}
@@ -1934,5 +1893,23 @@
 			return this;
 		}
 	});
+
+	ui.copyStr = function (string) {
+
+		var span = flagrate.createElement("span")
+			.insertText(string)
+			.insertTo(document.body);
+
+		var range = document.createRange();
+		range.selectNode(span);
+
+		var selection = window.getSelection()
+		selection.removeAllRanges();
+		selection.addRange(range);
+
+		document.execCommand("copy");
+
+		span.remove();
+	};
 
 })();
