@@ -363,6 +363,13 @@ P = Class.create(P, {
 			}).insertTo(r1R);
 		}
 
+		new sakura.ui.Alert({
+			title       : 'info',
+			type        : 'white',
+			body        : JSON.stringify(program, undefined, '  ').replace(/\n/g, '<br />'),
+			disableClose: true
+		}).render(r1L);
+
 		// pager
 		var nav = flagrate.createElement("nav").insertTo(r2F);
 		var pager = flagrate.createElement("ul", { "class": "pager" }).insertTo(nav);
