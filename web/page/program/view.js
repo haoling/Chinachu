@@ -366,7 +366,7 @@ P = Class.create(P, {
 		new sakura.ui.Alert({
 			title       : 'info',
 			type        : 'white',
-			body        : JSON.stringify(program, undefined, '  ').replace(/\n/g, '<br />'),
+			body        : JSON.stringify(program, undefined, '  ').replace(/[\u00A0-\u9999<>\&]/gim, function(i) { return '&#'+i.charCodeAt(0)+';'; }).replace(/\n/g, '<br />'),
 			disableClose: true
 		}).render(r1L);
 
