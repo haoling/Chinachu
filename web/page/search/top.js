@@ -16,6 +16,7 @@ P = Class.create(P, {
 		this.draw();
 
 		this.onNotify = this.refresh.bindAsEventListener(this);
+		document.observe('chinachu:reserves', this.onNotify);
 		document.observe('chinachu:schedule', this.onNotify);
 
 		return this;
@@ -23,6 +24,7 @@ P = Class.create(P, {
 	,
 	deinit: function() {
 
+		document.stopObserving('chinachu:reserves', this.onNotify);
 		document.stopObserving('chinachu:schedule', this.onNotify);
 
 		return this;
@@ -194,7 +196,7 @@ P = Class.create(P, {
 					}
 				}
 
-				programs.push(program);
+				programs.push(chinachu.util.getProgramById(program.id));
 			}
 		}
 
@@ -214,6 +216,32 @@ P = Class.create(P, {
 					}
 				},
 				menuItems: [
+					program._isReserves ? (
+						program.isManualReserved ?
+						{
+							label   : '予約取消...',
+							icon    : './icons/cross-script.png',
+							onSelect: function() {
+								new chinachu.ui.Unreserve(program.id);
+							}
+						} : (
+							program.isSkip ?
+							{
+								label   : 'スキップの取消...',
+								icon    : './icons/tick-circle.png',
+								onSelect: function() {
+									new chinachu.ui.Unskip(program.id);
+								}
+							} :
+							{
+								label   : 'スキップ...',
+								icon    : './icons/exclamation-red.png',
+								onSelect: function() {
+									new chinachu.ui.Skip(program.id);
+								}
+							}
+						)
+					) :
 					{
 						label   : '予約...',
 						icon    : './icons/plus-circle.png',
@@ -340,6 +368,14 @@ P = Class.create(P, {
 				sortAlt    : program.start,
 				text       : chinachu.dateToString(new Date(program.start))
 			};
+
+			if (program._isReserves) {
+				if (program.isSkip) {
+					row.className += ' skipped';
+				} else {
+					row.className += ' reserved';
+				}
+			}
 
 			rows.push(row);
 		});

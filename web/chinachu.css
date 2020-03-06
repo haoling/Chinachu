@@ -1177,6 +1177,10 @@ div.timetable > div.timescale {
 
 tr.disabled > td {
 	opacity         : 0.4; }
+tr.skipped {
+	background-color: #ffe88180; }
+tr.reserved {
+	background-color: #6ba0de54; }
 
 td.id > div {
 	color      : #aaa;
